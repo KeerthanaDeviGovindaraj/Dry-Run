@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "ghostco"
+version = "0.1.0"
+description = "GhostCo — multi-agent AI boardroom simulation"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+crewai = { extras = ["tools"], version = ">=0.80.0" }
+streamlit = ">=1.35.0"
+python-dotenv = ">=1.0.0"
+pydantic = ">=2.6.0"
+
+[tool.poetry.scripts]
+ghostco = "ghostco.main:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.crewai]
+type = "crew"
