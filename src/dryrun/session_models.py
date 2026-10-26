@@ -1,7 +1,7 @@
 """
 session_models.py
 
-Persistent session structures for GhostCo.
+Persistent session structures for DryRun.
 
 These models store:
 - Debate rounds
@@ -19,7 +19,7 @@ Used by:
 from pydantic import BaseModel, Field
 from typing import List, Dict
 
-from ghostco.schemas import (
+from dryrun.schemas import (
     CTOMemo,
     CMOMemo,
     CFOMemo,
@@ -103,7 +103,7 @@ class SessionEvent(BaseModel):
 
 class DebateSession(BaseModel):
     """
-    Entire GhostCo boardroom session.
+    Entire DryRun boardroom session.
     """
 
     problem: str

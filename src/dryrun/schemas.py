@@ -1,5 +1,5 @@
 """
-schemas.py — All Pydantic output schemas for GhostCo.
+schemas.py — All Pydantic output schemas for DryRun.
 
 Every agent task is bound to one of these via output_pydantic=
 This is what was missing in Phase 1 — enforced structured JSON from every agent.
@@ -260,7 +260,7 @@ class Objection(BaseModel):
 class DecisionPacket(BaseModel):
     """
     The decision brief produced by the Decision Lead synthesis task.
-    This is the primary deliverable of every GhostCo session — written to be the
+    This is the primary deliverable of every DryRun session — written to be the
     pre-read a PM takes into a decision review.
     """
     executive_summary:  str = Field(description="3 sentences max — what we're doing and why")

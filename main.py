@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from ghostco.session_runner import SessionRunner
+from dryrun.session_runner import SessionRunner
 
 Path("outputs").mkdir(exist_ok=True)
 
@@ -29,7 +29,7 @@ SAMPLE_CONTEXT = (
 
 def run():
     print("\n" + "=" * 60)
-    print("  GHOSTCO — AI Boardroom Session")
+    print("  DRY RUN — Decision Review Session")
     print("=" * 60)
     print(f"\nProblem: {SAMPLE_PROBLEM}")
     print(f"\nContext: {SAMPLE_CONTEXT}")

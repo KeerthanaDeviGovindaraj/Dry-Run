@@ -1,5 +1,5 @@
 """
-GhostCo — Decision Review for Product Managers (Streamlit UI).
+Dry Run — Decision Review for Product Managers (Streamlit UI).
 
 Orchestration only: run lifecycle (thread + real progress + cancel + timeout),
 session state, history, and tab wiring. All rendering lives in ui_components.py.
@@ -23,20 +23,21 @@ try:
 except Exception:
     pass
 
-from ghostco.crew import GhostCo
-from ghostco.debate_engine import DebateEngine, DebateSession
-from ghostco.session_runner import build_single_pass_session
-from ghostco.session_store import SessionStore
-from ghostco.report_generator import ReportGenerator
-from ghostco.evaluator import SessionEvaluator
-from ghostco.schemas import DecisionPacket
+from dryrun.crew import DryRun
+from dryrun.debate_engine import DebateEngine, DebateSession
+from dryrun.session_runner import build_single_pass_session
+from dryrun.session_store import SessionStore
+from dryrun.report_generator import ReportGenerator
+from dryrun.evaluator import SessionEvaluator
+from dryrun.schemas import DecisionPacket
+from dryrun import grounding
 
 import ui_components as ui
 
 # Hard cap so a hung model can never freeze the app forever.
 RUN_TIMEOUT_SECONDS = 20 * 60
 
-st.set_page_config(page_title="GhostCo — Decision Review", page_icon="🧭",
+st.set_page_config(page_title="Dry Run — Decision Review", page_icon="🧭",
                    layout="wide", initial_sidebar_state="expanded")
 ui.load_css()
 ui.hero()
@@ -51,19 +52,20 @@ store = SessionStore()
 
 
 # ── Background run ───────────────────────────────────────────────────────────────
-def run_session(problem, ctx, use_debate, progress_q, result_q, cancel_evt):
+def run_session(problem, ctx, use_debate, supporting_data, progress_q, result_q, cancel_evt):
     """Runs in a worker thread. Streams progress events and a final result."""
     def progress(evt):
         progress_q.put(evt)
 
     try:
-        gc = GhostCo()
+        gc = DryRun()
         if use_debate:
             engine = DebateEngine(gc, progress=progress)
-            session = engine.run(problem, ctx)
+            session = engine.run(problem, ctx, supporting_data=supporting_data)
         else:
             progress_q.put({"stage": "round", "message": "Panel analysing (single pass)…"})
-            result = gc.crew().kickoff(inputs={"problem": problem, "company_context": ctx})
+            enriched = f"{ctx}\n\n{supporting_data}" if supporting_data else ctx
+            result = gc.crew().kickoff(inputs={"problem": problem, "company_context": enriched})
             session = build_single_pass_session(problem, ctx, result)
 
         if cancel_evt.is_set():
@@ -102,9 +104,31 @@ with st.sidebar:
         placeholder="e.g. Should we ship self-serve onboarding to replace the "
                     "sales-assisted flow for SMB signups next quarter?")
     st.markdown("### What you actually know")
-    ctx = st.text_area("Context & data", height=120, label_visibility="collapsed",
-        placeholder="Paste real numbers if you have them — activation rate, support "
-                    "load, team capacity, what users asked for. More real data = fewer guesses.")
+    ctx = st.text_area("Context & data", height=110, label_visibility="collapsed",
+        placeholder="Stage, team size, runway, what users asked for…")
+
+    st.markdown("### Ground it in your real data")
+    st.caption("Attach metrics or notes so the panel cites facts, not guesses.")
+    up = st.file_uploader("Upload CSV / TXT / MD", type=["csv", "txt", "md", "tsv", "json", "log"],
+                          label_visibility="collapsed")
+    pasted = st.text_area("…or paste data", height=90, label_visibility="collapsed",
+        placeholder="Paste a metrics table, interview notes, or a support export.")
+
+    # Build the grounding block (shown back to the user as confirmation).
+    ground = None
+    file_data = None
+    if up is not None:
+        try:
+            file_data = grounding.from_file(up.name, up.getvalue())
+        except ValueError as e:
+            st.error(str(e))
+    try:
+        ground = grounding.combine(pasted, file_data)
+    except Exception:
+        ground = None
+    if ground and not ground.is_empty():
+        note = " (trimmed)" if ground.truncated else ""
+        st.success(f"📎 Grounding: {ground.label}{note}")
 
     use_debate = st.toggle("Multi-round debate", value=True,
         help="Stakeholders who disagree revise their view across up to 3 rounds")
@@ -158,8 +182,9 @@ if st.session_state.pop("_launch", False) and not st.session_state.running and p
                                 problem=problem, loaded_from_history=False)
         pq, rq, cancel = queue.Queue(), queue.Queue(), threading.Event()
         st.session_state.cancel = cancel
+        sd = ground.as_prompt_block() if ground and not ground.is_empty() else ""
         threading.Thread(target=run_session,
-                         args=(problem, ctx, use_debate, pq, rq, cancel), daemon=True).start()
+                         args=(problem, ctx, use_debate, sd, pq, rq, cancel), daemon=True).start()
 
         start = time.time()
         with st.status("Running the review…", expanded=True) as status:

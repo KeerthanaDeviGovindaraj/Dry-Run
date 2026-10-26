@@ -1,4 +1,4 @@
-# tasks.yaml — GhostCo task descriptions
+# tasks.yaml — DryRun task descriptions
 # All tasks now have output_pydantic set in crew.py
 # Prompts explicitly instruct agents to populate every schema field
 
@@ -209,7 +209,8 @@ ceo_synthesis_task:
     You have every stakeholder memo (Engineering Lead, Product Marketing, Business
     / Exec Sponsor, Risk & Compliance, Customer Advocate) and the Devil's Advocate
     brief. Pay special attention to every claim tagged "assumption" and roll them
-    up into one honest assumptions register.
+    up into one honest assumptions register. If the PM provided supporting data,
+    lean on claims tagged "given" from it and do not treat them as assumptions.
 
     You MUST respond with a JSON object matching this exact schema:
     - executive_summary: string, max 3 sentences

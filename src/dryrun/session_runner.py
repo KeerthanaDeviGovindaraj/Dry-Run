@@ -1,10 +1,10 @@
-from ghostco.crew import GhostCo
-from ghostco.debate_engine import DebateSession, RoundResult, _parse
-from ghostco.schemas import (
+from dryrun.crew import DryRun
+from dryrun.debate_engine import DebateSession, RoundResult, _parse
+from dryrun.schemas import (
     DecisionPacket, CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo, DevilsBrief,
 )
-from ghostco.session_store import SessionStore
-from ghostco.report_generator import ReportGenerator
+from dryrun.session_store import SessionStore
+from dryrun.report_generator import ReportGenerator
 
 
 def build_single_pass_session(problem: str, company_context: str, result) -> DebateSession:
@@ -39,17 +39,19 @@ def build_single_pass_session(problem: str, company_context: str, result) -> Deb
 class SessionRunner:
     """
     Single-pass runner: all seven agents run once via the sequential crew.
-    For multi-round debate use DebateEngine(GhostCo()).run(...).
+    For multi-round debate use DebateEngine(DryRun()).run(...).
     """
 
     def __init__(self):
         self.store = SessionStore()
         self.reporter = ReportGenerator()
 
-    def run(self, problem: str, company_context: str) -> DecisionPacket:
-        result = GhostCo().crew().kickoff(
-            inputs={"problem": problem, "company_context": company_context}
+    def run(self, problem: str, company_context: str, supporting_data: str = "") -> DecisionPacket:
+        enriched = f"{company_context}\n\n{supporting_data}" if supporting_data else company_context
+        result = DryRun().crew().kickoff(
+            inputs={"problem": problem, "company_context": enriched}
         )
+        # Keep the clean context (not the enriched one) on the stored session.
         session = build_single_pass_session(problem, company_context, result)
         packet = session.final_packet
 

@@ -1,5 +1,5 @@
 """
-ui_components.py — presentation for the GhostCo Streamlit app.
+ui_components.py — presentation for the DryRun Streamlit app.
 
 Kept separate from app.py so the rendering is readable and the orchestration
 (threads, state, run lifecycle) lives on its own. Every function here is pure
@@ -7,7 +7,7 @@ rendering given a packet/session; no business logic.
 """
 
 import streamlit as st
-from ghostco.schemas import DecisionPacket, display_name
+from dryrun.schemas import DecisionPacket, display_name
 
 # ── Design tokens ────────────────────────────────────────────────────────────────
 AGENT_COLORS = {
@@ -104,7 +104,7 @@ def load_css():
 def hero():
     st.markdown(
         '<div class="gc-hero"><div class="mark">🧭</div>'
-        '<div><h1>GhostCo</h1>'
+        '<div><h1>Dry Run</h1>'
         '<p>Pressure-test a product decision before the review — and know exactly '
         'what you still need to validate.</p></div></div>',
         unsafe_allow_html=True)
@@ -213,7 +213,7 @@ def render_decision_brief(packet: DecisionPacket, problem: str, dev_mode: bool):
             st.markdown(f"- {m}")
 
     st.download_button("⬇ Download brief (JSON)", packet.model_dump_json(indent=2),
-                       "ghostco_decision_brief.json", "application/json")
+                       "dry_run_decision_brief.json", "application/json")
 
 
 def render_review_prep(packet: DecisionPacket):

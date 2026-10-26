@@ -1,5 +1,5 @@
 """
-crew.py — GhostCo crew definition.
+crew.py — DryRun crew definition.
 
 Phase 1 fixes applied:
 - All exec tasks wired to output_pydantic= (structured JSON enforced)
@@ -16,20 +16,20 @@ from crewai.project import CrewBase, agent, crew, task
 from crewai_tools import SerperDevTool
 import os
 
-from ghostco.llm_factory import build_llm
-from ghostco.schemas import (
+from dryrun.llm_factory import build_llm
+from dryrun.schemas import (
     CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo,
     DevilsBrief, DecisionPacket
 )
 
 
 @CrewBase
-class GhostCo:
+class DryRun:
     """
-    GhostCo agent + task factory.
+    DryRun agent + task factory.
 
-    For single-pass runs:  GhostCo().crew().kickoff(inputs=...)
-    For multi-round debate: DebateEngine(GhostCo()).run(problem, context)
+    For single-pass runs:  DryRun().crew().kickoff(inputs=...)
+    For multi-round debate: DebateEngine(DryRun()).run(problem, context)
     """
 
     agents_config = "config/agents.yaml"
@@ -181,7 +181,7 @@ class GhostCo:
     def crew(self) -> Crew:
         """
         Single-pass run — use for quick tests.
-        For full multi-round debate use DebateEngine(GhostCo()).run(...)
+        For full multi-round debate use DebateEngine(DryRun()).run(...)
         """
         return Crew(
             agents=self.agents,

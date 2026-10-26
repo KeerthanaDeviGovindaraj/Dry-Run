@@ -1,5 +1,5 @@
 """
-llm_factory.py — Central LLM selection for GhostCo.
+llm_factory.py — Central LLM selection for DryRun.
 
 Lets the whole crew switch providers from environment variables so the project
 runs either against OpenAI (best quality) or a free local Ollama model (no API
@@ -14,7 +14,7 @@ OLLAMA_BASE_URL   Ollama server URL        (default: http://localhost:11434)
 
 Usage
 -----
-    from ghostco.llm_factory import build_llm
+    from dryrun.llm_factory import build_llm
     agent = Agent(..., llm=build_llm())
 """
 
