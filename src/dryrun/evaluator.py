@@ -1,5 +1,5 @@
 """
-evaluator.py — Evaluation framework for GhostCo.
+evaluator.py — Evaluation framework for DryRun.
 
 Computes:
 - Per-agent confidence scores
@@ -15,11 +15,11 @@ import statistics
 from dataclasses import dataclass, field
 from typing import Any
 
-from ghostco.schemas import (
+from dryrun.schemas import (
     CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo,
     DevilsBrief, DecisionPacket
 )
-from ghostco.debate_engine import DebateSession, RoundResult
+from dryrun.debate_engine import DebateSession, RoundResult
 
 
 # ── Per-round evaluation ───────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ class SessionEvaluator:
 class SingleAgentBaseline:
     """
     Runs the same problem through a single GPT call with no multi-agent setup.
-    Used to benchmark GhostCo's multi-agent approach against naive single-agent.
+    Used to benchmark DryRun's multi-agent approach against naive single-agent.
     """
 
     def __init__(self, model: str = "gpt-4o"):
@@ -216,17 +216,17 @@ Respond in JSON.
         result["num_perspectives"] = 1
         return result
 
-    def compare(self, ghostco_eval: SessionEval, baseline: dict) -> dict:
+    def compare(self, dryrun_eval: SessionEval, baseline: dict) -> dict:
         """Return a side-by-side comparison dict for the Streamlit benchmark UI."""
         return {
-            "ghostco": {
+            "dryrun": {
                 "approach":           "multi_agent_debate",
                 "num_perspectives":   5,
-                "debate_rounds":      ghostco_eval.total_rounds,
-                "consensus_score":    ghostco_eval.final_consensus,
-                "ceo_confidence":     ghostco_eval.final_ceo_confidence,
-                "dissent_surfaced":   bool(ghostco_eval.agents_who_dissented),
-                "minority_report":    bool(ghostco_eval.minority_agents),
+                "debate_rounds":      dryrun_eval.total_rounds,
+                "consensus_score":    dryrun_eval.final_consensus,
+                "ceo_confidence":     dryrun_eval.final_ceo_confidence,
+                "dissent_surfaced":   bool(dryrun_eval.agents_who_dissented),
+                "minority_report":    bool(dryrun_eval.minority_agents),
             },
             "baseline": {
                 "approach":           "single_agent",

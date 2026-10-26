@@ -1,22 +1,30 @@
-[tool.poetry]
-name = "ghostco"
+[project]
+name = "dryrun"
 version = "0.1.0"
-description = "GhostCo — multi-agent AI boardroom simulation"
-authors = ["Your Name <you@example.com>"]
+description = "Dry Run — multi-agent decision-review panel for product managers"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "crewai[tools]>=0.130.0,<2.0.0",
+    "crewai-tools>=0.40.0",
+    "streamlit>=1.40.0,<2.0.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.6.0,<3.0.0",
+    "pandas>=2.0.0",
+    "openai>=1.40.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<3.14"
-crewai = { extras = ["tools"], version = ">=0.80.0" }
-streamlit = ">=1.35.0"
-python-dotenv = ">=1.0.0"
-pydantic = ">=2.6.0"
+[project.scripts]
+dryrun = "main:run"
 
-[tool.poetry.scripts]
-ghostco = "ghostco.main:run"
+[tool.setuptools]
+packages = ["dryrun"]
+package-dir = { "" = "src" }
+py-modules = ["main"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
 
 [tool.crewai]
 type = "crew"

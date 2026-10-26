@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 outputs/
 .DS_Store
+
+# Streamlit local secrets — never commit real keys
+.streamlit/secrets.toml
