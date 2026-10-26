@@ -16,6 +16,11 @@ honesty: every stakeholder must tag each claim as **given** (from your data),
 headline deliverable is the list of unvalidated assumptions the decision rests
 on — the thing a PM most needs before walking into a review.
 
+**Ground it in your real data.** Paste a metrics table or upload a CSV / notes
+file in the sidebar, and the panel reasons over *your* numbers — citing them as
+`given` facts — instead of guessing. This is the line between "plausible
+fiction" and "argued from what you actually know."
+
 ---
 
 ## Architecture
@@ -306,11 +311,15 @@ Shipped:
 - [x] Review prep — the hardest objections you'll face, with ready answers
 - [x] Product redesign — card-based brief, badges, review panel
 
+Shipped (cont.):
+- [x] **Ground in your real data** — paste/upload metrics or notes; the panel
+      cites them as `given` facts (`grounding.py`)
+- [x] Session history — reopen a past decision from the sidebar
+
 Next (highest-leverage first):
-- [ ] **Ground in your real data** — upload a metrics CSV / interview notes so
-      stakeholders cite real numbers instead of guessing (RAG)
 - [ ] **90-day callback** — reopen a past decision and check it against the
       success metrics and assumptions you bet on
+- [ ] Retrieval over larger docs (vector DB) when a single pasted block isn't enough
 - [ ] **Interactive what-if** — change an assumption, re-run affected stakeholders
 - [ ] Single-agent baseline comparison surfaced in the UI
 - [ ] One-click export to PDF / Notion / Slack

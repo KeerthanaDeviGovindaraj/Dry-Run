@@ -353,13 +353,21 @@ class DebateEngine:
 
     # ── Orchestration ────────────────────────────────────────────────────────────
 
-    def run(self, problem: str, company_context: str) -> DebateSession:
+    def run(self, problem: str, company_context: str, supporting_data: str = "") -> DebateSession:
         """
         Round 1:     all execs analyse, then Devil's Advocate critiques.
         Rounds 2–N:  dissenting execs revise, then Devil's Advocate re-critiques.
         Final:       CEO synthesises the decision packet.
+
+        supporting_data: optional block of the PM's real data (metrics, notes).
+        When present it is appended to the context so stakeholders cite it as
+        grounded fact instead of guessing.
         """
+        # Keep the human-readable context on the session, but feed the enriched
+        # version (context + grounding) to the agents.
         session = DebateSession(problem=problem, company_context=company_context)
+        if supporting_data:
+            company_context = f"{company_context}\n\n{supporting_data}"
 
         # Round 1 — full analysis
         print(f"\n{'='*50}\n  DEBATE ROUND 1\n{'='*50}")

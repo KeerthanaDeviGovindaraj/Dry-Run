@@ -46,10 +46,12 @@ class SessionRunner:
         self.store = SessionStore()
         self.reporter = ReportGenerator()
 
-    def run(self, problem: str, company_context: str) -> DecisionPacket:
+    def run(self, problem: str, company_context: str, supporting_data: str = "") -> DecisionPacket:
+        enriched = f"{company_context}\n\n{supporting_data}" if supporting_data else company_context
         result = GhostCo().crew().kickoff(
-            inputs={"problem": problem, "company_context": company_context}
+            inputs={"problem": problem, "company_context": enriched}
         )
+        # Keep the clean context (not the enriched one) on the stored session.
         session = build_single_pass_session(problem, company_context, result)
         packet = session.final_packet
 
