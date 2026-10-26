@@ -4,10 +4,12 @@
 
 cto_analysis_task:
   description: >
-    Analyse this business problem as the CTO:
+    You are the Engineering Lead in a product decision review.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    Assess what it actually takes to build this and the technical risk involved.
 
     You MUST respond with a JSON object matching this exact schema:
     - feasibility_assessment: what would actually need to be built/integrated
@@ -17,11 +19,22 @@ cto_analysis_task:
     - build_vs_buy_rationale: why
     - hidden_assumption: one assumption others are making that is probably wrong
     - verdict: one sentence bottom line (max 200 chars)
+    - key_claims: 2–4 objects, each with:
+        statement (one sentence),
+        basis (exactly one of "given" = taken from the context the PM gave you,
+                "benchmark" = a typical industry number, NOT this product's data,
+                "assumption" = you are guessing and it must be validated),
+        confidence (0.0–1.0)
+    - assumptions: objects you are relying on, each with:
+        statement, why_it_matters, how_to_validate (a cheap concrete check),
+        validated (true ONLY if the PM's context already confirms it),
+        raised_by: "Engineering Lead"
     - confidence_score: float 0.0–1.0 reflecting how certain you are
     - revision_needed: true if another analysis round would materially change your answer
     - revision_reason: why (empty string if revision_needed is false)
 
-    Be specific. No hand-waving. Confidence below 0.6 should trigger revision_needed=true.
+    Be specific. Do not present a guess as a fact — tag it "assumption".
+    Confidence below 0.6 should trigger revision_needed=true.
   expected_output: >
     A valid JSON object with all fields from the CTOMemo schema.
     No markdown fences. Pure JSON only.
@@ -29,26 +42,31 @@ cto_analysis_task:
 
 cmo_analysis_task:
   description: >
-    Analyse this business problem as the CMO:
+    You are Product Marketing in a product decision review.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    Judge who this is for, how it lands in the market, and whether demand is real.
 
     You MUST respond with a JSON object matching this exact schema:
-    - tam_usd_millions: float, total addressable market in $M
-    - sam_usd_millions: float, serviceable addressable market in $M
-    - som_usd_millions: float, serviceable obtainable market in $M
-    - ideal_customer_profile: string description
-    - top_competitors: list of up to 3 competitor names
+    - tam_usd_millions: float — size the opportunity if relevant, else your best estimate
+    - sam_usd_millions: float
+    - som_usd_millions: float
+    - ideal_customer_profile: who specifically benefits from this change
+    - top_competitors: up to 3 relevant competitor/alternative names
     - positioning_statement: one sentence (max 200 chars)
-    - gtm_channel: primary recommended channel
-    - gtm_rationale: why this channel
+    - gtm_channel: how you would take this change to users
+    - gtm_rationale: why
     - verdict: one sentence bottom line (max 200 chars)
+    - key_claims: 2–4 objects with statement, basis ("given"/"benchmark"/"assumption"), confidence (0.0–1.0)
+    - assumptions: objects with statement, why_it_matters, how_to_validate, validated, raised_by: "Product Marketing"
     - confidence_score: float 0.0–1.0
     - revision_needed: true if another round would materially change your answer
     - revision_reason: why (empty string if false)
 
-    Ground market sizing in real numbers. Confidence below 0.6 triggers revision_needed=true.
+    Any market number you cannot derive from the PM's context must be tagged
+    "benchmark" or "assumption" — never "given". Confidence below 0.6 triggers revision_needed=true.
   expected_output: >
     A valid JSON object with all fields from the CMOMemo schema.
     No markdown fences. Pure JSON only.
@@ -56,25 +74,29 @@ cmo_analysis_task:
 
 cfo_analysis_task:
   description: >
-    Analyse this business problem as the CFO:
+    You are the Business / Exec Sponsor in a product decision review.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    Decide whether this is worth the team's time and investment.
 
     You MUST respond with a JSON object matching this exact schema:
-    - one_time_cost_usd: float, estimated one-time cost
-    - recurring_cost_usd_annual: float, annual recurring cost
-    - revenue_potential_usd_annual: float, expected annual revenue or cost saving
+    - one_time_cost_usd: float, estimated build cost (engineering time has a cost)
+    - recurring_cost_usd_annual: float, annual maintenance/run cost
+    - revenue_potential_usd_annual: float, expected revenue, retention value, or cost saving
     - payback_months: integer, estimated payback period
-    - top_financial_risks: list of up to 2 objects with description, severity, mitigation
+    - top_financial_risks: up to 2 objects with description, severity, mitigation
     - suspect_assumption: the most optimistic assumption you do not trust
     - verdict: one sentence (max 200 chars)
+    - key_claims: 2–4 objects with statement, basis ("given"/"benchmark"/"assumption"), confidence (0.0–1.0)
+    - assumptions: objects with statement, why_it_matters, how_to_validate, validated, raised_by: "Business / Exec Sponsor"
     - confidence_score: float 0.0–1.0
     - revision_needed: bool
     - revision_reason: string (empty if false)
 
-    Do not make up numbers — if you cannot estimate, say so in suspect_assumption.
-    Confidence below 0.65 triggers revision_needed=true.
+    Do not invent numbers and call them facts — any figure not in the PM's
+    context is "benchmark" or "assumption". Confidence below 0.65 triggers revision_needed=true.
   expected_output: >
     A valid JSON object with all fields from the CFOMemo schema.
     No markdown fences. Pure JSON only.
@@ -82,23 +104,28 @@ cfo_analysis_task:
 
 legal_analysis_task:
   description: >
-    Analyse this business problem as General Counsel:
+    You are Risk & Compliance in a product decision review.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    Surface the risk, privacy, trust, and compliance implications.
 
     You MUST respond with a JSON object matching this exact schema:
-    - legal_risks: list of up to 3 objects with description, severity (low/medium/high), mitigation
-    - data_privacy_concerns: string (GDPR, CCPA, HIPAA if relevant)
+    - legal_risks: up to 3 objects with description, severity (low/medium/high), mitigation
+    - data_privacy_concerns: string (GDPR, CCPA, HIPAA, user-data handling if relevant)
     - ip_contract_notes: string
     - jurisdictional_issues: string
-    - action_items: list of 1–5 concrete strings for the legal team
+    - action_items: 1–5 concrete, proportionate next steps
     - verdict: one sentence (max 200 chars)
+    - key_claims: 2–4 objects with statement, basis ("given"/"benchmark"/"assumption"), confidence (0.0–1.0)
+    - assumptions: objects with statement, why_it_matters, how_to_validate, validated, raised_by: "Risk & Compliance"
     - confidence_score: float 0.0–1.0
     - revision_needed: bool
     - revision_reason: string (empty if false)
 
-    Rate every risk. Be a risk-ranker not a blocker.
+    Rate every risk. Be a risk-ranker, not a blocker. Tag any legal reassurance
+    you cannot confirm from the context as an "assumption".
   expected_output: >
     A valid JSON object with all fields from the LegalMemo schema.
     No markdown fences. Pure JSON only.
@@ -106,23 +133,28 @@ legal_analysis_task:
 
 sales_analysis_task:
   description: >
-    Analyse this business problem as the CRO:
+    You are the Customer Advocate in a product decision review.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    Represent the actual user. What do they really want vs. what we assume?
 
     You MUST respond with a JSON object matching this exact schema:
-    - affected_customer_segments: list of strings
-    - deal_size_impact: string with estimated $ impact
-    - top_objections: list of up to 3 objections you will hear in the field
+    - affected_customer_segments: list of strings — who is impacted
+    - deal_size_impact: string — upsell, retention, or churn risk with estimated impact
+    - top_objections: up to 3 objections real users/customers will raise
     - sales_motion: exactly one of "PLG", "direct_sales", "channel", "hybrid"
-    - voice_of_customer: what customers actually want vs what we think
+    - voice_of_customer: what customers actually say vs. what the team assumes
     - verdict: one sentence (max 200 chars)
+    - key_claims: 2–4 objects with statement, basis ("given"/"benchmark"/"assumption"), confidence (0.0–1.0)
+    - assumptions: objects with statement, why_it_matters, how_to_validate, validated, raised_by: "Customer Advocate"
     - confidence_score: float 0.0–1.0
     - revision_needed: bool
     - revision_reason: string (empty if false)
 
-    Ground this in what you hear in the field, not what marketing says.
+    Mark whether each point is real customer evidence ("given") or your inference
+    ("assumption"). Ground this in what users actually say.
   expected_output: >
     A valid JSON object with all fields from the SalesMemo schema.
     No markdown fences. Pure JSON only.
@@ -130,34 +162,36 @@ sales_analysis_task:
 
 devils_advocate_task:
   description: >
-    You have received structured analysis memos from all 5 executives.
-    Your job: attack the weakest assumption in each and surface hidden dissent.
+    You are the Devil's Advocate in a product decision review. You have the memos
+    from all five stakeholders. Attack the weakest claim in each and, above all,
+    catch anything tagged as a fact ("given") that is really a guess ("assumption").
 
-    PROBLEM: {problem}
+    PRODUCT DECISION: {problem}
 
-    You have access to the outputs of:
-    - CTO Analysis
-    - CMO Analysis
-    - CFO Analysis
-    - Legal Analysis
-    - Sales Analysis
-    Review those outputs and identify contradictions,
-    weak assumptions, hidden risks, and disagreements.
+    The stakeholders are (internal keys in parentheses):
+    - Engineering Lead (CTO)
+    - Product Marketing (CMO)
+    - Business / Exec Sponsor (CFO)
+    - Risk & Compliance (Legal)
+    - Customer Advocate (Sales)
+    Review their memos and identify contradictions, weak assumptions treated as
+    facts, hidden risks, and disagreements.
 
     You MUST respond with a JSON object matching this exact schema:
-    - cto_weakest_claim: string — their weakest claim + why it could be wrong
-    - cmo_weakest_claim: string
-    - cfo_weakest_claim: string
-    - legal_weakest_claim: string
-    - sales_weakest_claim: string
+    - cto_weakest_claim: string — Engineering Lead's weakest claim + why it could be wrong
+    - cmo_weakest_claim: string — Product Marketing's weakest claim
+    - cfo_weakest_claim: string — Business / Exec Sponsor's weakest claim
+    - legal_weakest_claim: string — Risk & Compliance's weakest claim
+    - sales_weakest_claim: string — Customer Advocate's weakest claim
     - elephant_in_room: string — the thing nobody said but everyone should worry about
     - unanswered_question: string — the one question nobody wants to answer
     - dissent_detected: bool — true if material disagreement exists between memos
-    - dissenting_agents: list of agent role names that conflict with consensus
+    - dissenting_agents: list using the INTERNAL keys (CTO, CMO, CFO, Legal, Sales)
     - confidence_score: float 0.0–1.0
 
-    Look specifically at the verdicts across all 5 memos.
-    If two or more contradict each other, dissent_detected must be true.
+    Compare the verdicts across all five memos. If two or more contradict each
+    other, dissent_detected must be true. Call out any claim whose basis should
+    be "assumption" but was presented as "given".
   expected_output: >
     A valid JSON object with all fields from the DevilsBrief schema.
     No markdown fences. Pure JSON only.
@@ -165,37 +199,49 @@ devils_advocate_task:
 
 ceo_synthesis_task:
   description: >
-    You are the CEO. You have all executive memos and the Devil's Advocate brief.
-    Make the final call. Be decisive.
+    You are the Decision Lead. Produce the decision brief the PM will take into
+    their review. Be clear and decisive, but never fake certainty — your job is to
+    separate what is known from what is assumed and tell the PM what to resolve.
 
-    PROBLEM: {problem}
-    COMPANY CONTEXT: {company_context}
-    You have access to:
-    - CTO analysis
-    - CMO analysis
-    - CFO analysis
-    - Legal analysis
-    - Sales analysis
-    - Devil's Advocate brief
-    Review all prior outputs and make the final decision.
+    PRODUCT DECISION: {problem}
+    CONTEXT THE PM GAVE YOU: {company_context}
+
+    You have every stakeholder memo (Engineering Lead, Product Marketing, Business
+    / Exec Sponsor, Risk & Compliance, Customer Advocate) and the Devil's Advocate
+    brief. Pay special attention to every claim tagged "assumption" and roll them
+    up into one honest assumptions register.
 
     You MUST respond with a JSON object matching this exact schema:
     - executive_summary: string, max 3 sentences
-    - decision: string, clear unambiguous recommendation
-    - key_rationale: list of exactly 3 strings, each citing a specific exec input
+    - decision: string, clear recommendation
+    - recommendation_strength: exactly one of "strong", "lean", "conditional", "hold"
+        (use "conditional" if it depends on unvalidated assumptions,
+         "hold" if too much is unknown to decide responsibly)
+    - key_rationale: 2–5 strings, each citing a specific stakeholder
+    - case_against: 2–4 strings — the sharpest objections a reviewer will raise, stated plainly
+    - assumptions_register: roll up the most important assumptions from all memos.
+        Each: statement, why_it_matters, how_to_validate, validated (bool), raised_by.
+        Prioritise the UNVALIDATED ones — these are what the PM must go check.
+    - open_questions: questions to resolve before committing. Each:
+        question, why_it_blocks, who_can_answer.
+    - anticipated_objections: the 3–5 HARDEST questions the PM will get in the
+        review. Each: question, asked_by (the reviewer type, e.g. "Skeptical VP",
+        "Engineering", "Finance", "Design"), suggested_answer (a crisp, HONEST
+        answer — not spin; if the honest answer is "we don't know yet", say that
+        and name how we'll find out).
     - minority_report: object with:
         strongest_counterargument: string
-        agents_who_dissented: list of strings
-        why_overridden: string — explicit reason for overriding
-        conditions_for_reversal: string — what evidence would change this
-    - action_items: list of min 5 objects each with owner, action, deadline
-    - risk_register: list of 3–5 objects each with description, severity, mitigation
-    - success_metrics: list of min 3 strings — how we know in 90 days this was right
-    - consensus_score: float 0.0–1.0 based on exec agreement you observed
+        agents_who_dissented: list of stakeholder names
+        why_overridden: explicit reason for proceeding despite the dissent
+        conditions_for_reversal: what evidence would flip this decision
+    - action_items: 3–10 objects each with owner, action, deadline
+    - risk_register: 2–6 objects each with description, severity, mitigation
+    - success_metrics: 2–6 strings — how we know in 90 days this was right
+    - consensus_score: float 0.0–1.0 based on stakeholder agreement you observed
     - ceo_confidence: float 0.0–1.0
 
-    If revision_history contains prior rounds, explain what changed.
-    Never leave minority_report empty — even unanimous decisions have a devil's case.
+    If the revision history shows prior rounds, reflect what changed.
+    Never leave minority_report empty — every decision has a case against it.
   expected_output: >
     A valid JSON object with all fields from the DecisionPacket schema.
     No markdown fences. Pure JSON only.

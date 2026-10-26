@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.gitignore
+outputs/
+.DS_Store
+.streamlit/secrets.toml
+tests_offline_pipeline.py
+*.md
+!README.md

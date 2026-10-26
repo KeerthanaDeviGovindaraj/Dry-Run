@@ -3,10 +3,11 @@
 import sys
 from pathlib import Path
 
-# Add src to Python path BEFORE imports
+# Add src to the Python path BEFORE importing the package.
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from ghostco.session_runner import SessionRunner
@@ -30,26 +31,25 @@ def run():
     print("\n" + "=" * 60)
     print("  GHOSTCO — AI Boardroom Session")
     print("=" * 60)
-
     print(f"\nProblem: {SAMPLE_PROBLEM}")
     print(f"\nContext: {SAMPLE_CONTEXT}")
-
     print("\nStarting boardroom session...\n")
 
     runner = SessionRunner()
-
-    result = runner.run(
-        problem=SAMPLE_PROBLEM,
-        company_context=SAMPLE_CONTEXT,
-    )
+    packet = runner.run(problem=SAMPLE_PROBLEM, company_context=SAMPLE_CONTEXT)
 
     print("\n" + "=" * 60)
     print("  FINAL DECISION PACKET")
     print("=" * 60)
+    print(f"\nDecision: {packet.decision}")
+    print(f"\nExecutive summary: {packet.executive_summary}")
+    print(f"\nConsensus score: {packet.consensus_score:.0%}  |  CEO confidence: {packet.ceo_confidence:.0%}")
+    print("\nKey rationale:")
+    for i, r in enumerate(packet.key_rationale, 1):
+        print(f"  {i}. {r}")
 
-    print(result)
-
-    print("\nDecision packet saved to outputs/")
+    print("\nFull packet saved to outputs/decision_packet.json")
+    print("Markdown summary saved to outputs/decision_packet.md")
 
 
 if __name__ == "__main__":

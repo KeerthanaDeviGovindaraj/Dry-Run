@@ -16,6 +16,7 @@ from crewai.project import CrewBase, agent, crew, task
 from crewai_tools import SerperDevTool
 import os
 
+from ghostco.llm_factory import build_llm
 from ghostco.schemas import (
     CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo,
     DevilsBrief, DecisionPacket
@@ -46,6 +47,7 @@ class GhostCo:
         return Agent(
             config=self.agents_config["cto_agent"],
             tools=self._search_tool(),
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -55,6 +57,7 @@ class GhostCo:
         return Agent(
             config=self.agents_config["cmo_agent"],
             tools=self._search_tool(),
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -63,6 +66,7 @@ class GhostCo:
     def cfo_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["cfo_agent"],
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -71,6 +75,7 @@ class GhostCo:
     def legal_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["legal_agent"],
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -80,6 +85,7 @@ class GhostCo:
         return Agent(
             config=self.agents_config["sales_agent"],
             tools=self._search_tool(),
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -88,6 +94,7 @@ class GhostCo:
     def devils_advocate_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["devils_advocate_agent"],
+            llm=build_llm(),
             verbose=True,
             max_iter=3,
         )
@@ -96,6 +103,7 @@ class GhostCo:
     def ceo_agent(self) -> Agent:
         return Agent(
             config=self.agents_config["ceo_agent"],
+            llm=build_llm(),
             verbose=True,
             max_iter=4,
         )
@@ -176,9 +184,9 @@ class GhostCo:
         For full multi-round debate use DebateEngine(GhostCo()).run(...)
         """
         return Crew(
-    agents=self.agents,
-    tasks=self.tasks,
-    process=Process.sequential,
-    verbose=True,
-    memory=False,
-)
+            agents=self.agents,
+            tasks=self.tasks,
+            process=Process.sequential,
+            verbose=True,
+            memory=False,
+        )

@@ -1,283 +1,259 @@
 """
-GhostCo — Streamlit Boardroom UI
-Full Phase 1 + Phase 2 implementation:
-- Structured JSON outputs displayed per agent
-- Debate round tracking
-- Consensus + confidence scores
-- Minority report section
-- Eval metrics panel
+GhostCo — Decision Review for Product Managers (Streamlit UI).
+
+Orchestration only: run lifecycle (thread + real progress + cancel + timeout),
+session state, history, and tab wiring. All rendering lives in ui_components.py.
 """
 
 import streamlit as st
-import sys, os, json, time, threading, queue
+import sys, os, time, threading, queue
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 Path("outputs").mkdir(exist_ok=True)
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))  # local ui_components
+
+# Bridge Streamlit Cloud secrets -> env (no-op locally).
+try:
+    for _k in ("OPENAI_API_KEY", "OPENAI_MODEL_NAME", "SERPER_API_KEY", "LLM_PROVIDER"):
+        if _k in st.secrets and not os.getenv(_k):
+            os.environ[_k] = str(st.secrets[_k])
+except Exception:
+    pass
 
 from ghostco.crew import GhostCo
 from ghostco.debate_engine import DebateEngine, DebateSession
+from ghostco.session_runner import build_single_pass_session
+from ghostco.session_store import SessionStore
+from ghostco.report_generator import ReportGenerator
 from ghostco.evaluator import SessionEvaluator
 from ghostco.schemas import DecisionPacket
 
-# ── Page config ────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="GhostCo", page_icon="🏢", layout="wide")
+import ui_components as ui
 
-st.markdown("""
-<style>
-.conf-bar-wrap{background:var(--secondary-background-color);border-radius:6px;height:8px;width:100%;margin-top:4px}
-.conf-bar{height:8px;border-radius:6px;background:#1D9E75}
-.agent-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;margin-right:4px}
-.score-big{font-size:28px;font-weight:500;line-height:1}
-.score-label{font-size:11px;color:gray;margin-top:2px}
-</style>
-""", unsafe_allow_html=True)
+# Hard cap so a hung model can never freeze the app forever.
+RUN_TIMEOUT_SECONDS = 20 * 60
+
+st.set_page_config(page_title="GhostCo — Decision Review", page_icon="🧭",
+                   layout="wide", initial_sidebar_state="expanded")
+ui.load_css()
+ui.hero()
 
 # ── State ──────────────────────────────────────────────────────────────────────
-for k, v in [("session", None), ("eval", None), ("running", False), ("log", [])]:
-    if k not in st.session_state:
-        st.session_state[k] = v
+_defaults = dict(session=None, eval=None, running=False, problem="", cancel=None,
+                 dev_mode=False, loaded_from_history=False, _launch=False)
+for k, v in _defaults.items():
+    st.session_state.setdefault(k, v)
 
-AGENT_COLORS = {
-    "CTO":   "#0F6E56", "CMO": "#BA7517", "CFO": "#A32D2D",
-    "Legal": "#185FA5", "Sales": "#993C1D",
-    "DevilsAdvocate": "#2C2C2A", "CEO": "#534AB7",
-}
+store = SessionStore()
 
-# ── Sidebar ────────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.title("GhostCo")
-    st.caption("AI boardroom — multi-agent debate")
 
-    problem = st.text_area("Business problem", height=130,
-        placeholder="Should we build a native mobile app?\nWe have 2,000 customers and $4M ARR...")
-    ctx = st.text_area("Company context", height=90,
-        placeholder="Stage, team size, runway, competitors...")
+# ── Background run ───────────────────────────────────────────────────────────────
+def run_session(problem, ctx, use_debate, progress_q, result_q, cancel_evt):
+    """Runs in a worker thread. Streams progress events and a final result."""
+    def progress(evt):
+        progress_q.put(evt)
 
-    use_debate = st.toggle("Enable multi-round debate", value=True,
-        help="Dissenting agents revise their analysis up to 3 rounds")
-
-    st.divider()
-    for name, color in AGENT_COLORS.items():
-        label = name if name not in ("DevilsAdvocate","CEO") else (
-            "Devil's Advocate" if name == "DevilsAdvocate" else "CEO (synthesiser)")
-        st.markdown(
-            f'<span style="background:{color}22;color:{color};padding:2px 8px;'
-            f'border-radius:999px;font-size:11px;font-weight:600">{label}</span>',
-            unsafe_allow_html=True)
-    st.markdown("")
-
-    run_btn = st.button("Convene boardroom", type="primary",
-        disabled=st.session_state.running or not problem.strip(),
-        use_container_width=True)
-
-# ── Layout ─────────────────────────────────────────────────────────────────────
-tab_live, tab_memos, tab_decision, tab_eval = st.tabs([
-    "Live session", "Exec memos", "Decision packet", "Eval metrics"
-])
-
-# ── Runner ─────────────────────────────────────────────────────────────────────
-def run_session(problem, ctx, use_debate, q):
     try:
         gc = GhostCo()
         if use_debate:
-            engine  = DebateEngine(gc)
+            engine = DebateEngine(gc, progress=progress)
             session = engine.run(problem, ctx)
         else:
-            result  = gc.crew().kickoff(inputs={
-                "problem": problem, "company_context": ctx,
-                "cto_memo":"","cmo_memo":"","cfo_memo":"",
-                "legal_memo":"","sales_memo":"","devils_brief":"","revision_history":""
-            })
-            # Wrap single-pass result into a minimal session
-            session = type("S", (), {
-                "rounds": [], "final_packet": result.tasks_output[-1].pydantic,
-                "total_rounds": 1
-            })()
-        evaluator = SessionEvaluator()
-        ev = evaluator.evaluate(session) if hasattr(session, "rounds") else None
-        q.put(("ok", session, ev))
+            progress_q.put({"stage": "round", "message": "Panel analysing (single pass)…"})
+            result = gc.crew().kickoff(inputs={"problem": problem, "company_context": ctx})
+            session = build_single_pass_session(problem, ctx, result)
+
+        if cancel_evt.is_set():
+            result_q.put(("cancelled", None, None)); return
+
+        ev = SessionEvaluator().evaluate(session) if getattr(session, "rounds", None) else None
+
+        # Persist + write report (best-effort).
+        try:
+            if session.final_packet:
+                store.save_session(problem, ctx, session.final_packet)
+                ReportGenerator().generate_markdown(session.final_packet)
+        except Exception:
+            pass
+
+        result_q.put(("ok", session, ev))
     except Exception as e:
         import traceback
-        q.put(("err", str(e), traceback.format_exc()))
+        result_q.put(("err", str(e), traceback.format_exc()))
 
 
-def conf_bar(score: float, color: str = "#1D9E75"):
-    pct = int(score * 100)
-    st.markdown(
-        f'<div class="conf-bar-wrap"><div class="conf-bar" '
-        f'style="width:{pct}%;background:{color}"></div></div>'
-        f'<div style="font-size:11px;color:gray;margin-top:2px">{pct}% confidence</div>',
-        unsafe_allow_html=True)
+def session_from_record(rec: dict) -> DebateSession:
+    """Rebuild a minimal session (brief only) from a saved history record."""
+    packet = DecisionPacket.model_validate(rec["decision_packet"])
+    s = DebateSession(problem=rec.get("problem", ""),
+                      company_context=rec.get("company_context", ""))
+    s.final_packet = packet
+    s.total_rounds = 0  # history records store the brief, not full rounds
+    return s
 
 
-def render_memo_card(role: str, memo, color: str):
-    with st.expander(f"{role}", expanded=True):
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            st.markdown(f"**Verdict:** {getattr(memo,'verdict','—')}")
-        with c2:
-            score = getattr(memo, "confidence_score", 0)
-            conf_bar(score, color)
+# ── Sidebar ────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### Your decision")
+    problem = st.text_area("What are you deciding?", height=120, label_visibility="collapsed",
+        placeholder="e.g. Should we ship self-serve onboarding to replace the "
+                    "sales-assisted flow for SMB signups next quarter?")
+    st.markdown("### What you actually know")
+    ctx = st.text_area("Context & data", height=120, label_visibility="collapsed",
+        placeholder="Paste real numbers if you have them — activation rate, support "
+                    "load, team capacity, what users asked for. More real data = fewer guesses.")
 
-        rev = getattr(memo, "revision_needed", False)
-        if rev:
-            st.warning(f"Revision flagged: {getattr(memo,'revision_reason','')}")
+    use_debate = st.toggle("Multi-round debate", value=True,
+        help="Stakeholders who disagree revise their view across up to 3 rounds")
 
-        st.json(memo.model_dump() if hasattr(memo, "model_dump") else {})
+    if st.session_state.running:
+        if st.button("■ Cancel", use_container_width=True):
+            if st.session_state.cancel:
+                st.session_state.cancel.set()
+            st.session_state.running = False
+            st.rerun()
+        clicked_run = st.button("Run the review", type="primary",
+            disabled=not problem.strip(), use_container_width=True)
+        if clicked_run:
+            st.session_state._launch = True
+
+    st.markdown("<div class='gc-sec'>Your review panel</div>", unsafe_allow_html=True)
+    ui.panel_pills()
+
+    # History
+    sessions = store.list_sessions()
+    if sessions:
+        st.markdown("<div class='gc-sec'>Past decisions</div>", unsafe_allow_html=True)
+        labels = {f"{s['created_at'][:10]} · {s['problem'][:40]}": s["id"] for s in sessions}
+        pick = st.selectbox("Reopen a decision", ["—"] + list(labels.keys()),
+                            label_visibility="collapsed")
+        if pick != "—":
+            rec = store.load_session(labels[pick])
+            if rec:
+                st.session_state.session = session_from_record(rec)
+                st.session_state.eval = None
+                st.session_state.problem = rec.get("problem", "")
+                st.session_state.loaded_from_history = True
+
+    st.divider()
+    st.session_state.dev_mode = st.toggle("Developer mode", value=st.session_state.dev_mode,
+        help="Show raw JSON memos and internal role keys")
+    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    st.caption(f"Model: {'local (Ollama)' if provider=='ollama' else os.getenv('OPENAI_MODEL_NAME','gpt-4o-mini')}")
 
 
-# ── Run logic ──────────────────────────────────────────────────────────────────
-if run_btn and problem.strip():
-    st.session_state.running = True
-    st.session_state.session = None
-    st.session_state.eval    = None
-    q = queue.Queue()
-    threading.Thread(target=run_session, args=(problem, ctx, use_debate, q), daemon=True).start()
+# ── Launch a run ─────────────────────────────────────────────────────────────────
+_needs_key = (os.getenv("LLM_PROVIDER", "openai").lower() != "ollama"
+              and not os.getenv("OPENAI_API_KEY"))
 
-    spinners = [
-        "CTO assessing feasibility...", "CMO sizing the market...",
-        "CFO modelling the numbers...", "Legal scanning for risk...",
-        "Sales checking the pipeline...", "Devil's Advocate sharpening the knives...",
-        "CEO synthesising the decision...",
-    ]
-    start, idx = time.time(), 0
-    with tab_live:
-        ph = st.empty()
-        while st.session_state.running:
-            ph.info(f"⏳ {spinners[min(idx, len(spinners)-1)]}")
-            time.sleep(8); idx += 1
-            if not q.empty(): break
-        kind, *rest = q.get()
+if st.session_state.pop("_launch", False) and not st.session_state.running and problem.strip():
+    if _needs_key:
+        st.error("No `OPENAI_API_KEY` found. Add it to `.env` / Streamlit Secrets, or set "
+                 "`LLM_PROVIDER=ollama` to run a free local model. Then rerun.")
+    else:
+        st.session_state.update(running=True, session=None, eval=None,
+                                problem=problem, loaded_from_history=False)
+        pq, rq, cancel = queue.Queue(), queue.Queue(), threading.Event()
+        st.session_state.cancel = cancel
+        threading.Thread(target=run_session,
+                         args=(problem, ctx, use_debate, pq, rq, cancel), daemon=True).start()
+
+        start = time.time()
+        with st.status("Running the review…", expanded=True) as status:
+            last_msg = "Starting…"
+            while True:
+                # drain progress
+                while not pq.empty():
+                    evt = pq.get()
+                    last_msg = evt.get("message", last_msg)
+                    st.write(f"• {last_msg}")
+
+                if not rq.empty():
+                    kind, *rest = rq.get()
+                    if kind == "ok":
+                        st.session_state.session, st.session_state.eval = rest
+                        status.update(label=f"Review complete in {int(time.time()-start)}s · "
+                                      f"{st.session_state.session.total_rounds or 1} round(s)",
+                                      state="complete")
+                    elif kind == "cancelled":
+                        status.update(label="Cancelled", state="error")
+                    else:
+                        status.update(label="Something went wrong", state="error")
+                        st.error(f"The review failed: {rest[0]}")
+                        if st.session_state.dev_mode:
+                            with st.expander("Details"):
+                                st.code(rest[1])
+                    break
+
+                if time.time() - start > RUN_TIMEOUT_SECONDS:
+                    cancel.set()
+                    status.update(label="Timed out", state="error")
+                    st.warning("The review took too long and was stopped. Try a faster model "
+                               "(set LLM_PROVIDER=openai) or a more focused decision.")
+                    break
+
+                if cancel.is_set():
+                    status.update(label="Cancelled", state="error")
+                    break
+                time.sleep(0.4)
+
         st.session_state.running = False
-        if kind == "ok":
-            st.session_state.session, st.session_state.eval = rest
-            ph.success(f"Session complete in {int(time.time()-start)}s  •  {st.session_state.session.total_rounds} debate round(s)")
-        else:
-            ph.error(f"Error: {rest[0]}")
-            st.code(rest[1])
+        st.rerun()
 
-# ── Tabs ───────────────────────────────────────────────────────────────────────
+
+# ── Tabs ─────────────────────────────────────────────────────────────────────────
 session: DebateSession | None = st.session_state.session
 ev = st.session_state.eval
+packet: DecisionPacket | None = session.final_packet if session else None
+dev = st.session_state.dev_mode
+
+if st.session_state.loaded_from_history and packet:
+    st.info("Viewing a saved decision. The debate and metrics tabs aren't stored "
+            "for past decisions — rerun to see them live.")
+
+tab_brief, tab_prep, tab_live, tab_memos, tab_eval = st.tabs([
+    "📋 Decision brief", "🎤 Review prep", "🗣️ Debate", "👥 Stakeholders", "📊 Metrics"
+])
+
+with tab_brief:
+    if not packet:
+        ui.empty_state("📋", "Your decision brief will appear here",
+            "Describe your decision in the sidebar and run the review. You'll get a "
+            "recommendation, the case against it, and the assumptions to validate first.")
+    else:
+        ui.render_decision_brief(packet, st.session_state.problem, dev)
+
+with tab_prep:
+    if not packet:
+        ui.empty_state("🎤", "Walk in prepared",
+            "After the review runs, this tab gives you the hardest questions you'll be "
+            "asked — and a crisp, honest answer for each.")
+    else:
+        ui.render_review_prep(packet)
 
 with tab_live:
     if not session:
-        st.info("Enter a problem in the sidebar and click **Convene boardroom**.")
+        ui.empty_state("🗣️", "The debate plays out here",
+            "Watch each round: who pushed back, what got revised, and the question "
+            "nobody wanted to answer.")
     else:
-        st.caption(f"Completed {session.total_rounds} round(s)")
-        if session.rounds:
-            for r in session.rounds:
-                st.markdown(f"**Round {r.round_num}** — "
-                    f"{'Dissent detected' if r.devils_brief.dissent_detected else 'No dissent'}"
-                    + (f" · Revised: {', '.join(r.revised_agents)}" if r.revised_agents else ""))
-                db = r.devils_brief
-                st.markdown(f"> **Elephant in the room:** {db.elephant_in_room}")
-                st.markdown(f"> ❓ {db.unanswered_question}")
-                st.divider()
+        ui.render_debate(session)
 
 with tab_memos:
-    if not session or not session.rounds:
-        st.info("Run a session to see exec memos.")
+    if not session or not getattr(session, "rounds", None):
+        ui.empty_state("👥", "Each stakeholder's view",
+            "Run a review to see every stakeholder's claims, tagged by whether they're "
+            "grounded in your data or just assumptions.")
     else:
-        last = session.rounds[-1]
-        memo_map = {
-            "CTO":   (last.cto_memo,   AGENT_COLORS["CTO"]),
-            "CMO":   (last.cmo_memo,   AGENT_COLORS["CMO"]),
-            "CFO":   (last.cfo_memo,   AGENT_COLORS["CFO"]),
-            "Legal": (last.legal_memo, AGENT_COLORS["Legal"]),
-            "Sales": (last.sales_memo, AGENT_COLORS["Sales"]),
-        }
-        for role, (memo, color) in memo_map.items():
-            render_memo_card(role, memo, color)
-
-with tab_decision:
-    packet: DecisionPacket | None = session.final_packet if session else None
-    if not packet:
-        st.info("Decision packet will appear here after a session completes.")
-    else:
-        # Top metrics row
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            st.markdown(f'<div class="score-big">{int(packet.consensus_score*100)}%</div>'
-                        f'<div class="score-label">Consensus score</div>', unsafe_allow_html=True)
-        with m2:
-            st.markdown(f'<div class="score-big">{int(packet.ceo_confidence*100)}%</div>'
-                        f'<div class="score-label">CEO confidence</div>', unsafe_allow_html=True)
-        with m3:
-            dissenters = packet.minority_report.agents_who_dissented
-            label = ", ".join(dissenters) if dissenters else "None"
-            st.markdown(f'<div class="score-big" style="font-size:16px;padding-top:6px">{label}</div>'
-                        f'<div class="score-label">Dissenters overridden</div>', unsafe_allow_html=True)
-
-        st.divider()
-        st.subheader("Executive summary")
-        st.write(packet.executive_summary)
-
-        st.subheader("The decision")
-        st.info(packet.decision)
-
-        st.subheader("Key rationale")
-        for i, r in enumerate(packet.key_rationale, 1):
-            st.markdown(f"{i}. {r}")
-
-        # Minority report
-        st.subheader("Minority report")
-        mr = packet.minority_report
-        with st.container(border=True):
-            st.markdown(f"**Strongest counterargument:** {mr.strongest_counterargument}")
-            st.markdown(f"**Agents who dissented:** {', '.join(mr.agents_who_dissented) or 'None'}")
-            st.markdown(f"**Why overridden:** {mr.why_overridden}")
-            st.markdown(f"**Conditions for reversal:** {mr.conditions_for_reversal}")
-
-        st.subheader("Action items")
-        for item in packet.action_items:
-            st.markdown(f"- **{item.owner}** — {item.action} *(by {item.deadline})*")
-
-        st.subheader("Risk register")
-        for risk in packet.risk_register:
-            badge_color = {"high":"🔴","medium":"🟡","low":"🟢"}.get(risk.severity.value,"⚪")
-            st.markdown(f"{badge_color} **{risk.severity.value.upper()}** — {risk.description}  \n"
-                        f"  *Mitigation: {risk.mitigation}*")
-
-        st.subheader("Success metrics (90 days)")
-        for m in packet.success_metrics:
-            st.markdown(f"- {m}")
-
-        st.download_button("Download as JSON", packet.model_dump_json(indent=2),
-            "ghostco_decision.json", "application/json")
+        ui.render_stakeholders(session, dev)
 
 with tab_eval:
     if not ev:
-        st.info("Evaluation metrics appear after a multi-round debate session.")
+        ui.empty_state("📊", "How the panel converged",
+            "Multi-round reviews track confidence and alignment across rounds — a signal "
+            "of how settled (or contested) the decision really is.")
     else:
-        st.subheader("Convergence trend")
-        import pandas as pd
-        df = pd.DataFrame({
-            "Round": [r.round_num for r in ev.round_evals],
-            "Mean confidence": [r.mean_confidence for r in ev.round_evals],
-            "Consensus score": [r.consensus_score for r in ev.round_evals],
-        }).set_index("Round")
-        st.line_chart(df)
-
-        st.subheader("Per-round breakdown")
-        for r in ev.round_evals:
-            with st.expander(f"Round {r.round_num}"):
-                for agent, conf in r.agent_confidences.items():
-                    color = AGENT_COLORS.get(agent, "#888")
-                    st.markdown(
-                        f'<span class="agent-pill" style="background:{color}22;color:{color}">{agent}</span>'
-                        f' {int(conf*100)}%',
-                        unsafe_allow_html=True)
-                if r.dissent_detected:
-                    st.warning(f"Dissent: {', '.join(r.dissenting_agents)}")
-                if r.revised_agents:
-                    st.info(f"Revised: {', '.join(r.revised_agents)}")
-
-        st.subheader("Final scores")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total rounds", ev.total_rounds)
-        col2.metric("Final consensus", f"{int(ev.final_consensus*100)}%")
-        col3.metric("CEO confidence", f"{int(ev.final_ceo_confidence*100)}%")
+        ui.render_metrics(ev)
