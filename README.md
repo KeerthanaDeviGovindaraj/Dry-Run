@@ -2,6 +2,15 @@
 
 > *Rehearse a product decision before it's real. A panel of AI stakeholders pressure-tests your call, surfaces the objections you'll face, and — most importantly — separates what you know from what you're assuming.*
 
+<p>
+  <!-- TODO: replace the # with your deployed URL once live (see Deployment below) -->
+  <a href="#"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-Dry%20Run-5B4BE0?style=for-the-badge"></a>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11–3.13-3776AB?style=for-the-badge&logo=python&logoColor=white">
+  <img alt="Streamlit" src="https://img.shields.io/badge/UI-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white">
+</p>
+
+> 🔗 **Live demo:** _not deployed yet — see [Deployment](#deployment) for the 3-minute Streamlit Cloud setup, then replace the badge link above and this line with your URL._
+
 You describe a product decision and whatever you actually know about it. Seven AI
 stakeholders — Engineering Lead, Product Marketing, Business/Exec Sponsor, Risk &
 Compliance, Customer Advocate, a Devil's Advocate, and a Decision Lead — each
@@ -20,6 +29,26 @@ on — the thing a PM most needs before walking into a review.
 file in the sidebar, and the panel reasons over *your* numbers — citing them as
 `given` facts — instead of guessing. This is the line between "plausible
 fiction" and "argued from what you actually know."
+
+---
+
+## Screenshots
+
+> _These are design mockups of the actual UI. To use real screenshots: run the
+> app, capture each tab, save them as `assets/screenshot_*.png`, and swap the
+> `.svg` paths below for your `.png` files._
+
+**Decision brief** — recommendation + strength, the case against, and the assumptions you still need to validate.
+
+![Decision brief](assets/mockup_decision_brief.svg)
+
+**Review prep** — the hardest questions you'll get, each with a ready, honest answer.
+
+![Review prep](assets/mockup_review_prep.svg)
+
+**Stakeholder views** — every claim tagged by basis: `given` (your data), `benchmark` (industry norm), or `assumption`.
+
+![Stakeholder views](assets/mockup_stakeholders.svg)
 
 ---
 
@@ -310,13 +339,15 @@ This project is inspired by:
 
 ## Deployment
 
-### Streamlit Community Cloud (easiest)
+### Streamlit Community Cloud (easiest — gives you the live link)
 1. Push this repo to GitHub.
 2. On [share.streamlit.io](https://share.streamlit.io), create an app pointing at
    `streamlit_app/app.py`.
 3. In **App → Settings → Secrets**, paste the contents of
    `.streamlit/secrets.toml.example` with your real `OPENAI_API_KEY`.
 4. Deploy. Python version is pinned via `runtime.txt` / `.python-version`.
+5. Copy your app URL (e.g. `https://dry-run.streamlit.app`) and paste it into
+   the **Live demo** badge link and the live-demo line at the top of this README.
 
 ### Docker
 ```bash

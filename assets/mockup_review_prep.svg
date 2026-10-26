@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="500" viewBox="0 0 960 500" font-family="-apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <linearGradient id="hero2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5B4BE0"/><stop offset="0.55" stop-color="#7C5CFF"/><stop offset="1" stop-color="#9b6bff"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="500" fill="#F6F7FB"/>
+
+  <rect x="24" y="20" width="912" height="66" rx="16" fill="url(#hero2)"/>
+  <text x="48" y="52" font-size="26">🧭</text>
+  <text x="84" y="50" fill="#fff" font-size="20" font-weight="700">Dry Run</text>
+  <text x="84" y="70" fill="#EAE6FF" font-size="12">Walk into the review already knowing the questions you'll be asked.</text>
+
+  <g font-size="13" font-weight="600">
+    <text x="36" y="120" fill="#5B6172">📋 Decision brief</text>
+    <rect x="158" y="100" width="118" height="30" rx="7" fill="#fff" stroke="#E7E9F0"/>
+    <text x="172" y="120" fill="#10121A">🎤 Review prep</text>
+    <text x="294" y="120" fill="#5B6172">🗣️ Debate</text>
+    <text x="380" y="120" fill="#5B6172">👥 Stakeholders</text>
+    <text x="508" y="120" fill="#5B6172">📊 Metrics</text>
+  </g>
+
+  <text x="24" y="162" font-size="12" font-weight="700" letter-spacing="1" fill="#5B6172">OBJECTIONS YOU'LL FACE — AND HOW TO ANSWER</text>
+
+  <!-- Q&A card 1 -->
+  <rect x="24" y="178" width="912" height="80" rx="14" fill="#fff" stroke="#E7E9F0"/>
+  <rect x="40" y="194" width="96" height="20" rx="10" fill="#EDEBFD"/>
+  <text x="50" y="208" font-size="11" font-weight="700" fill="#5B4BE0">Skeptical VP</text>
+  <text x="146" y="209" font-size="14" font-weight="650" fill="#10121A">What happens to activation if self-serve underperforms?</text>
+  <text x="40" y="238" font-size="13" fill="#5B6172">💬 We gate rollout on a 4-week A/B; if activation drops below 34%, we keep sales-assisted for at-risk segments.</text>
+
+  <!-- Q&A card 2 -->
+  <rect x="24" y="270" width="912" height="80" rx="14" fill="#fff" stroke="#E7E9F0"/>
+  <rect x="40" y="286" width="94" height="20" rx="10" fill="#EDEBFD"/>
+  <text x="50" y="300" font-size="11" font-weight="700" fill="#5B4BE0">Engineering</text>
+  <text x="144" y="301" font-size="14" font-weight="650" fill="#10121A">Can we actually free the 15 hrs/wk sales spends on onboarding?</text>
+  <text x="40" y="330" font-size="13" fill="#5B6172">💬 Yes, but only after self-serve covers the top 3 setup tasks — until then it's partial, not full, reclamation.</text>
+
+  <!-- Q&A card 3 -->
+  <rect x="24" y="362" width="912" height="80" rx="14" fill="#fff" stroke="#E7E9F0"/>
+  <rect x="40" y="378" width="70" height="20" rx="10" fill="#EDEBFD"/>
+  <text x="50" y="392" font-size="11" font-weight="700" fill="#5B4BE0">Finance</text>
+  <text x="120" y="393" font-size="14" font-weight="650" fill="#10121A">What's the downside if churn rises in the self-serve cohort?</text>
+  <text x="40" y="422" font-size="13" fill="#5B6172">💬 Honest answer: we don't know yet — the A/B measures it. We cap exposure to one segment until it's proven.</text>
+</svg>

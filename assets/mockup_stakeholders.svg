@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="-apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <linearGradient id="hero3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5B4BE0"/><stop offset="0.55" stop-color="#7C5CFF"/><stop offset="1" stop-color="#9b6bff"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="470" fill="#F6F7FB"/>
+
+  <rect x="24" y="20" width="912" height="66" rx="16" fill="url(#hero3)"/>
+  <text x="48" y="52" font-size="26">🧭</text>
+  <text x="84" y="50" fill="#fff" font-size="20" font-weight="700">Dry Run</text>
+  <text x="84" y="70" fill="#EAE6FF" font-size="12">Every claim tagged: grounded in your data, an industry norm, or an assumption.</text>
+
+  <g font-size="13" font-weight="600">
+    <text x="36" y="120" fill="#5B6172">📋 Decision brief</text>
+    <text x="158" y="120" fill="#5B6172">🎤 Review prep</text>
+    <text x="272" y="120" fill="#5B6172">🗣️ Debate</text>
+    <rect x="358" y="100" width="128" height="30" rx="7" fill="#fff" stroke="#E7E9F0"/>
+    <text x="372" y="120" fill="#10121A">👥 Stakeholders</text>
+    <text x="500" y="120" fill="#5B6172">📊 Metrics</text>
+  </g>
+
+  <!-- Engineering Lead card -->
+  <rect x="24" y="150" width="912" height="140" rx="14" fill="#fff" stroke="#E7E9F0"/>
+  <text x="40" y="175" font-size="15" font-weight="700" fill="#0F6E56">Engineering Lead</text>
+  <text x="40" y="196" font-size="13" fill="#10121A"><tspan font-weight="700">Bottom line:</tspan> Self-serve onboarding is a 6-week build on existing auth + a setup wizard.</text>
+  <!-- confidence bar -->
+  <rect x="760" y="166" width="160" height="7" rx="4" fill="#E7E9F0"/>
+  <rect x="760" y="166" width="118" height="7" rx="4" fill="#12916B"/>
+  <text x="760" y="188" font-size="11" fill="#5B6172">74% confidence</text>
+
+  <text x="40" y="222" font-size="12" font-weight="700" fill="#10121A">Key claims</text>
+  <!-- given -->
+  <rect x="40" y="230" width="74" height="18" rx="6" fill="#E3F5EE"/>
+  <text x="48" y="243" font-size="10" font-weight="700" fill="#12916B">● from your data</text>
+  <text x="124" y="243" font-size="12" fill="#10121A">Team has 3 engineers free next quarter.</text>
+  <!-- benchmark -->
+  <rect x="40" y="252" width="80" height="18" rx="6" fill="#E6EFFA"/>
+  <text x="48" y="265" font-size="10" font-weight="700" fill="#2563B6">◆ industry norm</text>
+  <text x="130" y="265" font-size="12" fill="#10121A">Setup wizards typically lift activation 5–10%.</text>
+  <!-- assumption -->
+  <rect x="40" y="274" width="74" height="18" rx="6" fill="#FDF0DC"/>
+  <text x="48" y="287" font-size="10" font-weight="700" fill="#C9820A">▲ assumption</text>
+  <text x="124" y="287" font-size="12" fill="#10121A">No new infra needed for self-serve signups.</text>
+
+  <!-- Customer Advocate card -->
+  <rect x="24" y="302" width="912" height="150" rx="14" fill="#fff" stroke="#E7E9F0"/>
+  <text x="40" y="327" font-size="15" font-weight="700" fill="#993C1D">Customer Advocate</text>
+  <text x="40" y="348" font-size="13" fill="#10121A"><tspan font-weight="700">Bottom line:</tspan> Users want faster setup, but enterprise expects a human to onboard them.</text>
+  <rect x="760" y="318" width="160" height="7" rx="4" fill="#E7E9F0"/>
+  <rect x="760" y="318" width="104" height="7" rx="4" fill="#12916B"/>
+  <text x="760" y="340" font-size="11" fill="#5B6172">65% confidence</text>
+
+  <text x="40" y="374" font-size="12" font-weight="700" fill="#10121A">Key claims</text>
+  <rect x="40" y="382" width="74" height="18" rx="6" fill="#E3F5EE"/>
+  <text x="48" y="395" font-size="10" font-weight="700" fill="#12916B">● from your data</text>
+  <text x="124" y="395" font-size="12" fill="#10121A">Faster setup is the top request — 142 mentions.</text>
+  <rect x="40" y="404" width="74" height="18" rx="6" fill="#FDF0DC"/>
+  <text x="48" y="417" font-size="10" font-weight="700" fill="#C9820A">▲ assumption</text>
+  <text x="124" y="417" font-size="12" fill="#10121A">Enterprise will resist losing human onboarding.</text>
+</svg>
