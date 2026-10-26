@@ -26,39 +26,50 @@ fiction" and "argued from what you actually know."
 ## Architecture
 
 ```
-Business Problem
+Product decision  +  your real data (optional: paste / upload CSV, notes)
       │
       ▼
-┌─────────────────────────────────────────────┐
-│           PARALLEL ANALYSIS PHASE           │
-│  CTO ─ CMO ─ CFO ─ Legal ─ Sales           │
-│  (each produces a structured exec memo)     │
-└────────────────────┬────────────────────────┘
-                     │  all memos as context
-                     ▼
-            Devil's Advocate
-            (attacks every memo)
-                     │
-                     ▼
-                CEO Agent
-        (synthesises final decision)
-                     │
-                     ▼
-          Decision Packet (Markdown)
+┌──────────────────────────────────────────────────────────┐
+│                     ANALYSIS PHASE                         │
+│  Engineering · Marketing · Sponsor · Risk · Customer       │
+│  each tags every claim: given / benchmark / assumption     │
+└───────────────────────────┬────────────────────────────────┘
+                            │  all memos as context
+                            ▼
+                     Devil's Advocate
+            (catches assumptions dressed up as facts)
+                            │
+                            ▼
+                ┌───────── dissent? ─────────┐
+                │ yes → flagged stakeholders  │
+                │        revise, re-critique  │  up to MAX_ROUNDS
+                └───────────┬────────────────┘
+                            ▼
+                      Decision Lead
+            (recommendation + strength, case against,
+             assumptions register, objections, open questions)
+                            │
+                            ▼
+              Decision Brief  (UI · Markdown · JSON)
 ```
 
 ### What's built
 | Capability | Where | Status |
 |-----------|-------|--------|
-| 7-agent boardroom, structured Pydantic outputs per agent | `crew.py`, `schemas.py` | ✅ |
+| 7-stakeholder panel, structured Pydantic output per role | `crew.py`, `schemas.py` | ✅ |
+| Honesty layer — every claim tagged given / benchmark / assumption | `schemas.py`, `config/tasks.yaml` | ✅ |
+| Data grounding — paste/upload your metrics; panel cites them as `given` | `grounding.py` | ✅ |
+| Decision brief — recommendation strength, case against, open questions | `schemas.py`, `report_generator.py` | ✅ |
+| Assumptions register — the unvalidated bets, with how to validate each | `schemas.py` | ✅ |
+| Review prep — hardest objections you'll face, with ready answers | `schemas.py` | ✅ |
 | Multi-round debate engine — dissent detection → targeted revisions | `debate_engine.py` | ✅ |
-| Devil's Advocate reads every memo and attacks the weakest claim | `debate_engine.py` | ✅ |
-| Evaluator — consensus/confidence trends, revision deltas | `evaluator.py` | ✅ |
-| Streamlit boardroom UI — live rounds, memos, decision packet, eval charts | `streamlit_app/app.py` | ✅ |
-| Markdown + JSON decision-packet export | `report_generator.py` | ✅ |
-| Containerised + Streamlit Cloud deploy | `Dockerfile`, `.streamlit/` | ✅ |
-| Single-agent GPT baseline for benchmarking | `evaluator.py` | ✅ |
+| Real-time progress, cancel, timeout, single-pass parity | `streamlit_app/app.py` | ✅ |
+| Session history — reopen past decisions from the sidebar | `session_store.py` | ✅ |
+| Evaluator — consensus/confidence trends across rounds | `evaluator.py` | ✅ |
+| Product UI — design system, cards, badges, accessibility | `streamlit_app/ui_components.py` | ✅ |
+| Markdown + JSON brief export | `report_generator.py` | ✅ |
 | Pluggable LLM — OpenAI **or** free local Ollama (no API key) | `llm_factory.py` | ✅ |
+| Containerised + Streamlit Cloud deploy | `Dockerfile`, `.streamlit/` | ✅ |
 
 ---
 
@@ -123,14 +134,22 @@ streamlit run streamlit_app/app.py
 # open http://localhost:8501
 ```
 
+In the sidebar: describe your decision, optionally **paste metrics or upload a
+CSV / TXT / MD file** under "Ground it in your real data," then run the review.
+With data attached, the panel cites your numbers as `given` facts instead of
+guessing. Past decisions are saved and reopenable from the sidebar.
+
 ### 5. Validate the pipeline offline (no API key, no model needed)
 
 ```bash
-PYTHONPATH=src python tests_offline_pipeline.py
+PYTHONPATH=src python tests_offline_pipeline.py   # full data flow, stubbed LLM
+PYTHONPATH=src python tests_grounding.py          # data-grounding unit tests
 ```
-This stubs the LLM and exercises the full data flow — debate rounds, dissent
-detection, revisions, Devil's Advocate, CEO synthesis, evaluator, and the
-Markdown report — so you can verify the pipeline without spending a token.
+The first stubs the LLM and exercises the full data flow — debate rounds,
+dissent detection, revisions, Devil's Advocate, Decision Lead synthesis,
+evaluator, and the Markdown report — so you can verify the pipeline without
+spending a token. The second covers the grounding module (trim, truncation,
+file-type handling, combine).
 
 ---
 
@@ -145,6 +164,7 @@ ghostco/
 ├── runtime.txt / .python-version    # Pin Python 3.13 for deploys
 ├── .env.example
 ├── tests_offline_pipeline.py        # Full pipeline test, no API key needed
+├── tests_grounding.py               # Data-grounding unit tests
 │
 ├── .streamlit/
 │   ├── config.toml                  # Theme + server config
@@ -152,25 +172,27 @@ ghostco/
 │
 ├── src/ghostco/
 │   ├── crew.py                      # Agent + task factory (single-pass crew)
-│   ├── debate_engine.py             # Multi-round debate orchestrator
+│   ├── debate_engine.py             # Multi-round debate orchestrator (+ progress hooks)
+│   ├── grounding.py                 # Turn the PM's real data into cited context
 │   ├── llm_factory.py               # Provider selection: OpenAI | Ollama
-│   ├── schemas.py                   # Pydantic output schemas (one per agent)
+│   ├── schemas.py                   # Pydantic schemas: memos, brief, honesty layer
 │   ├── evaluator.py                 # Consensus/confidence metrics + GPT baseline
-│   ├── report_generator.py          # Markdown decision-packet export
+│   ├── report_generator.py          # Markdown decision-brief export
 │   ├── session_runner.py            # Single-pass orchestration + persistence
-│   ├── session_store.py             # JSON session persistence
+│   ├── session_store.py             # Session persistence + history
 │   ├── session_models.py            # Session/analytics data models
 │   ├── voting.py / conflict_analyzer.py  # Verdict polarity + conflict helpers
 │   └── config/
-│       ├── agents.yaml              # Role personas
+│       ├── agents.yaml              # Stakeholder personas
 │       └── tasks.yaml               # Task descriptions & expected outputs
 │
 ├── streamlit_app/
-│   └── app.py                       # Boardroom UI
+│   ├── app.py                       # UI orchestration (run lifecycle, state, tabs)
+│   └── ui_components.py             # Design system + tab renderers
 │
-└── outputs/                         # Auto-generated per run (gitignored)
-    ├── decision_packet.json
-    └── decision_packet.md
+└── outputs/                         # Auto-generated (gitignored)
+    ├── decision_packet.json / .md   # Latest brief
+    └── sessions/                    # Saved decision history
 ```
 
 ---
@@ -219,39 +241,45 @@ consensus/confidence trend across rounds.
 
 ## Example output
 
-**Problem:** *Should we build native mobile (iOS + Android) for our B2B SaaS?*
+**Decision:** *Replace sales-assisted SMB onboarding with a self-serve flow next quarter?*
+**Data attached:** activation rate 38%, 400 SMB signups/mo, sales spends 15 hrs/wk on it,
+top request (142 mentions) = faster setup.
 
-*Illustrative excerpt — a full packet also includes a minority report, action
-items with owners/deadlines, a severity-rated risk register, and 90-day success
-metrics. See `outputs/decision_packet.md` after a run.*
+*Illustrative excerpt. A full brief also includes rationale, a minority report,
+action items, a severity-rated risk register, and 90-day success metrics. See
+`outputs/decision_packet.md` after a run.*
 
 ```markdown
-## Executive Summary
-We will build a React Native mobile app, targeting iOS first, over the next
-two quarters. The competitive pressure is real, the customer signal is clear,
-and the financial model supports it — but only if we scope ruthlessly.
+# Decision Brief
+> Conditional — rests on unvalidated assumptions · Alignment 80% · Confidence 75%
 
-## The Decision
-Build mobile using React Native. Start with iOS. Ship in 14 weeks. Android follows
-in Q3. Scope: read-only dashboard + push notifications. No feature parity with web.
+## Recommendation
+Ship self-serve for SMB, gated on a validation phase — do not cut sales-assisted
+onboarding until the self-serve cohort proves out.
 
-## Key Rationale
-1. CTO confirmed React Native reduces team size requirement from 4 to 2 mobile engineers
-2. CFO model shows payback in 8 months assuming 15% churn reduction from mobile cohort
-3. Sales reports 3 enterprise deals stalled explicitly on mobile gap
+## The case against
+- Sales-onboarded SMB churn is 6%/mo [given]; self-serve could run higher.
 
-...
+## Assumptions to validate
+- ⚠️ UNVALIDATED — Self-serve matches sales-assisted activation (38%). — Exec Sponsor
+  - How to validate: A/B a self-serve cohort for 4 weeks before full rollout.
+
+## Objections you'll face (and how to answer)
+- Skeptical VP asks: What happens to activation if self-serve underperforms?
+  - Your answer: We gate rollout on a 4-week A/B; if activation drops below 34%,
+    we keep sales-assisted for at-risk segments.
 ```
 
 ---
 
 ## Extending GhostCo
 
-### Add a new executive agent
-1. Add the agent persona to `config/agents.yaml`
-2. Add the analysis task to `config/tasks.yaml`
-3. Add `@agent` and `@task` methods to `crew.py`
-4. Add the new task to the `context` list of `devils_advocate_task`
+### Add a new stakeholder
+1. Add the persona to `config/agents.yaml` and a task to `config/tasks.yaml`
+2. Add `@agent` and `@task` methods to `crew.py` (and a memo schema in `schemas.py`)
+3. Wire it into the single-pass crew's `context` lists and the `DebateEngine`
+   role registry (`ANALYSIS_ROLES`, `_SCHEMA`, `_TASK_KEY`)
+4. Add a display name to `STAKEHOLDER_DISPLAY` in `schemas.py`
 
 ### Change the LLM
 All agents get their model from `llm_factory.build_llm()`, which reads
@@ -310,10 +338,7 @@ Shipped:
 - [x] Assumptions register as the headline deliverable
 - [x] Review prep — the hardest objections you'll face, with ready answers
 - [x] Product redesign — card-based brief, badges, review panel
-
-Shipped (cont.):
-- [x] **Ground in your real data** — paste/upload metrics or notes; the panel
-      cites them as `given` facts (`grounding.py`)
+- [x] Ground in your real data — paste/upload metrics or notes (`grounding.py`)
 - [x] Session history — reopen a past decision from the sidebar
 
 Next (highest-leverage first):
