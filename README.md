@@ -1,6 +1,8 @@
-# GhostCo — Decision Review for Product Managers
+# Dry Run — Decision Review for Product Managers
 
-> *Pressure-test a product decision before the review. A panel of AI stakeholders debates your call, surfaces the objections you'll face, and — most importantly — separates what you know from what you're assuming.*
+> *Rehearse a product decision before it's real. A panel of AI stakeholders pressure-tests your call, surfaces the objections you'll face, and — most importantly — separates what you know from what you're assuming.*
+
+<sub>Package/import name remains `ghostco` for internal stability.</sub>
 
 You describe a product decision and whatever you actually know about it. Seven AI
 stakeholders — Engineering Lead, Product Marketing, Business/Exec Sponsor, Risk &
@@ -10,7 +12,7 @@ recommendation, the case against it, and an **assumptions register** that flags
 exactly what you still need to validate.
 
 ### Why this is useful, not just impressive
-Most "AI boardroom" demos confidently invent numbers. GhostCo's core feature is
+Most "AI boardroom" demos confidently invent numbers. Dry Run's core feature is
 honesty: every stakeholder must tag each claim as **given** (from your data),
 **benchmark** (an industry norm), or **assumption** (a guess to validate). The
 headline deliverable is the list of unvalidated assumptions the decision rests
@@ -91,7 +93,7 @@ pip install -r requirements.txt
 
 ### 2. Choose an LLM provider
 
-GhostCo runs against either OpenAI (best quality) or a **free local model via
+Dry Run works against either OpenAI (best quality) or a **free local model via
 Ollama** (no API key, no cost). The provider is selected with `LLM_PROVIDER`.
 
 ```bash
@@ -272,7 +274,7 @@ onboarding until the self-serve cohort proves out.
 
 ---
 
-## Extending GhostCo
+## Extending Dry Run
 
 ### Add a new stakeholder
 1. Add the persona to `config/agents.yaml` and a task to `config/tasks.yaml`

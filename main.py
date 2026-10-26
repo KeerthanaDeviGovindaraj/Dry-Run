@@ -29,7 +29,7 @@ SAMPLE_CONTEXT = (
 
 def run():
     print("\n" + "=" * 60)
-    print("  GHOSTCO — AI Boardroom Session")
+    print("  DRY RUN — Decision Review Session")
     print("=" * 60)
     print(f"\nProblem: {SAMPLE_PROBLEM}")
     print(f"\nContext: {SAMPLE_CONTEXT}")

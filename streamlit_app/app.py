@@ -1,5 +1,5 @@
 """
-GhostCo — Decision Review for Product Managers (Streamlit UI).
+Dry Run — Decision Review for Product Managers (Streamlit UI).
 
 Orchestration only: run lifecycle (thread + real progress + cancel + timeout),
 session state, history, and tab wiring. All rendering lives in ui_components.py.
@@ -37,7 +37,7 @@ import ui_components as ui
 # Hard cap so a hung model can never freeze the app forever.
 RUN_TIMEOUT_SECONDS = 20 * 60
 
-st.set_page_config(page_title="GhostCo — Decision Review", page_icon="🧭",
+st.set_page_config(page_title="Dry Run — Decision Review", page_icon="🧭",
                    layout="wide", initial_sidebar_state="expanded")
 ui.load_css()
 ui.hero()
