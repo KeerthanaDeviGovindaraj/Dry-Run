@@ -1,4 +1,4 @@
-# agents.yaml — GhostCo stakeholder personas, re-cast for a Product Manager's
+# agents.yaml — DryRun stakeholder personas, re-cast for a Product Manager's
 # decision review. The YAML keys stay stable (cto_agent, cmo_agent, ...) so the
 # crew wiring is unchanged, but each persona is now a stakeholder a PM actually
 # presents to. A core rule for every stakeholder: tag each claim as grounded in

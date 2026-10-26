@@ -1,7 +1,7 @@
 [project]
-name = "ghostco"
+name = "dryrun"
 version = "0.1.0"
-description = "GhostCo — multi-agent AI boardroom simulation"
+description = "Dry Run — multi-agent decision-review panel for product managers"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.11,<3.14"
 dependencies = [
@@ -15,10 +15,10 @@ dependencies = [
 ]
 
 [project.scripts]
-ghostco = "main:run"
+dryrun = "main:run"
 
 [tool.setuptools]
-packages = ["ghostco"]
+packages = ["dryrun"]
 package-dir = { "" = "src" }
 py-modules = ["main"]
 

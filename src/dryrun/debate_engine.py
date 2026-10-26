@@ -1,5 +1,5 @@
 """
-debate_engine.py — Multi-round debate orchestrator for GhostCo.
+debate_engine.py — Multi-round debate orchestrator for DryRun.
 
 This is the Phase 2/3 core:
 - Detects dissent from structured agent outputs
@@ -25,7 +25,7 @@ from typing import Any
 
 from crewai import Agent, Task, Crew, Process
 
-from ghostco.schemas import (
+from dryrun.schemas import (
     CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo,
     DevilsBrief, DecisionPacket,
 )
@@ -186,15 +186,15 @@ Instructions:
 
 class DebateEngine:
     """
-    Orchestrates multi-round debate between GhostCo agents.
+    Orchestrates multi-round debate between DryRun agents.
 
     Usage:
-        engine = DebateEngine(GhostCo())
+        engine = DebateEngine(DryRun())
         session = engine.run(problem, company_context)
         packet = session.final_packet
     """
 
-    def __init__(self, ghostco_crew_instance, progress=None):
+    def __init__(self, dryrun_crew_instance, progress=None):
         """
         progress: optional callable(event: dict) invoked at each real stage so a
         UI can show genuine progress. Events look like:
@@ -203,7 +203,7 @@ class DebateEngine:
             {"stage": "revise", "role": "CFO", "round": 2, "message": "..."}
             {"stage": "ceo", "message": "..."}
         """
-        self.gc = ghostco_crew_instance
+        self.gc = dryrun_crew_instance
         self._progress = progress
 
     def _emit(self, **event):
@@ -242,7 +242,7 @@ class DebateEngine:
         round_num:        int = 1,
     ) -> dict[str, Any]:
         """Run the given exec roles once and return their typed memos."""
-        from ghostco.schemas import display_name
+        from dryrun.schemas import display_name
         memos: dict[str, Any] = {}
         for role in roles:
             self._emit(stage="exec", role=role, round=round_num,
@@ -296,7 +296,7 @@ class DebateEngine:
             "Legal": devils_brief.legal_weakest_claim,
             "Sales": devils_brief.sales_weakest_claim,
         }
-        from ghostco.schemas import display_name
+        from dryrun.schemas import display_name
         updated = dict(current_memos)
         for role in agents_to_revise:
             if role not in _SCHEMA:

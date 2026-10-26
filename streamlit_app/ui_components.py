@@ -1,5 +1,5 @@
 """
-ui_components.py — presentation for the GhostCo Streamlit app.
+ui_components.py — presentation for the DryRun Streamlit app.
 
 Kept separate from app.py so the rendering is readable and the orchestration
 (threads, state, run lifecycle) lives on its own. Every function here is pure
@@ -7,7 +7,7 @@ rendering given a packet/session; no business logic.
 """
 
 import streamlit as st
-from ghostco.schemas import DecisionPacket, display_name
+from dryrun.schemas import DecisionPacket, display_name
 
 # ── Design tokens ────────────────────────────────────────────────────────────────
 AGENT_COLORS = {

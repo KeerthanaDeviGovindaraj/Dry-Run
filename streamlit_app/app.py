@@ -23,14 +23,14 @@ try:
 except Exception:
     pass
 
-from ghostco.crew import GhostCo
-from ghostco.debate_engine import DebateEngine, DebateSession
-from ghostco.session_runner import build_single_pass_session
-from ghostco.session_store import SessionStore
-from ghostco.report_generator import ReportGenerator
-from ghostco.evaluator import SessionEvaluator
-from ghostco.schemas import DecisionPacket
-from ghostco import grounding
+from dryrun.crew import DryRun
+from dryrun.debate_engine import DebateEngine, DebateSession
+from dryrun.session_runner import build_single_pass_session
+from dryrun.session_store import SessionStore
+from dryrun.report_generator import ReportGenerator
+from dryrun.evaluator import SessionEvaluator
+from dryrun.schemas import DecisionPacket
+from dryrun import grounding
 
 import ui_components as ui
 
@@ -58,7 +58,7 @@ def run_session(problem, ctx, use_debate, supporting_data, progress_q, result_q,
         progress_q.put(evt)
 
     try:
-        gc = GhostCo()
+        gc = DryRun()
         if use_debate:
             engine = DebateEngine(gc, progress=progress)
             session = engine.run(problem, ctx, supporting_data=supporting_data)

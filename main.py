@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from ghostco.session_runner import SessionRunner
+from dryrun.session_runner import SessionRunner
 
 Path("outputs").mkdir(exist_ok=True)
 
