@@ -1,7 +1,7 @@
 """
 Offline end-to-end pipeline test.
 
-Stubs CrewAI's LLM-backed Crew.kickoff so we can validate the WHOLE GhostCo
+Stubs CrewAI's LLM-backed Crew.kickoff so we can validate the WHOLE DryRun
 data flow — debate rounds, dissent detection, revision, Devil's Advocate,
 CEO synthesis, evaluator, and markdown report — with zero API calls.
 
@@ -13,13 +13,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from ghostco import crew as crew_mod
-from ghostco import debate_engine as de_mod
-from ghostco.crew import GhostCo
-from ghostco.debate_engine import DebateEngine, detect_dissent
-from ghostco.evaluator import SessionEvaluator
-from ghostco.report_generator import ReportGenerator
-from ghostco.schemas import (
+from dryrun import crew as crew_mod
+from dryrun import debate_engine as de_mod
+from dryrun.crew import DryRun
+from dryrun.debate_engine import DebateEngine, detect_dissent
+from dryrun.evaluator import SessionEvaluator
+from dryrun.report_generator import ReportGenerator
+from dryrun.schemas import (
     CTOMemo, CMOMemo, CFOMemo, LegalMemo, SalesMemo, Risk, RiskLevel,
     DevilsBrief, DecisionPacket, MinorityReport, ActionItem,
     Claim, ClaimBasis, Assumption, OpenQuestion, Objection,
@@ -173,7 +173,7 @@ def main():
     de_mod.Crew.kickoff = _fake_kickoff
 
     print("=== Testing single-pass crew ===")
-    from ghostco.session_runner import SessionRunner
+    from dryrun.session_runner import SessionRunner
     runner = SessionRunner()
     packet = runner.run("Build mobile?", "B2B SaaS, $4M ARR")
     assert isinstance(packet, DecisionPacket)
@@ -186,7 +186,7 @@ def main():
     print("dissent detection OK — flagged:", flagged)
 
     print("\n=== Testing full debate engine ===")
-    session = DebateEngine(GhostCo()).run("Build mobile?", "B2B SaaS, $4M ARR")
+    session = DebateEngine(DryRun()).run("Build mobile?", "B2B SaaS, $4M ARR")
     assert session.final_packet is not None
     assert session.total_rounds >= 2, f"expected revision round, got {session.total_rounds}"
     print(f"debate OK — {session.total_rounds} rounds, revised in round 2:",

@@ -1,5 +1,5 @@
 from pathlib import Path
-from ghostco.schemas import DecisionPacket
+from dryrun.schemas import DecisionPacket
 
 
 class ReportGenerator:

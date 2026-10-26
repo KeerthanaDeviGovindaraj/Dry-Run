@@ -1,4 +1,4 @@
-# tasks.yaml — GhostCo task descriptions
+# tasks.yaml — DryRun task descriptions
 # All tasks now have output_pydantic set in crew.py
 # Prompts explicitly instruct agents to populate every schema field
 

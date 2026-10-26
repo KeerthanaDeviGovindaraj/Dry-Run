@@ -2,8 +2,6 @@
 
 > *Rehearse a product decision before it's real. A panel of AI stakeholders pressure-tests your call, surfaces the objections you'll face, and — most importantly — separates what you know from what you're assuming.*
 
-<sub>Package/import name remains `ghostco` for internal stability.</sub>
-
 You describe a product decision and whatever you actually know about it. Seven AI
 stakeholders — Engineering Lead, Product Marketing, Business/Exec Sponsor, Risk &
 Compliance, Customer Advocate, a Devil's Advocate, and a Decision Lead — each
@@ -82,8 +80,8 @@ Product decision  +  your real data (optional: paste / upload CSV, notes)
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/yourname/ghostco.git
-cd ghostco
+git clone https://github.com/yourname/dryrun.git
+cd dryrun
 
 # Recommended: isolated env on a supported Python (uv shown; venv works too)
 uv venv --python 3.13 .venv
@@ -158,7 +156,7 @@ file-type handling, combine).
 ## Project structure
 
 ```
-ghostco/
+dryrun/
 ├── main.py                          # CLI entry point (single-pass run)
 ├── requirements.txt                 # Pinned, reproducible deps
 ├── pyproject.toml
@@ -172,7 +170,7 @@ ghostco/
 │   ├── config.toml                  # Theme + server config
 │   └── secrets.toml.example         # Template for Streamlit Cloud secrets
 │
-├── src/ghostco/
+├── src/dryrun/
 │   ├── crew.py                      # Agent + task factory (single-pass crew)
 │   ├── debate_engine.py             # Multi-round debate orchestrator (+ progress hooks)
 │   ├── grounding.py                 # Turn the PM's real data into cited context
@@ -297,7 +295,7 @@ LLM_PROVIDER=ollama OLLAMA_MODEL=llama3.1 python main.py
 ```
 
 To add another provider (e.g. Anthropic), extend `build_llm()` in
-`src/ghostco/llm_factory.py` to return the appropriate `crewai.LLM`.
+`src/dryrun/llm_factory.py` to return the appropriate `crewai.LLM`.
 
 ---
 
@@ -322,10 +320,10 @@ This project is inspired by:
 
 ### Docker
 ```bash
-docker build -t ghostco .
+docker build -t dryrun .
 docker run -p 8501:8501 \
   -e LLM_PROVIDER=openai -e OPENAI_API_KEY=sk-... \
-  ghostco
+  dryrun
 # open http://localhost:8501
 ```
 

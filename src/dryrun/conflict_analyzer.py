@@ -1,4 +1,4 @@
-from ghostco.evaluator import _verdict_polarity
+from dryrun.evaluator import _verdict_polarity
 
 
 def find_conflicts(memos: dict):

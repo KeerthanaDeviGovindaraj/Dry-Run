@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from ghostco import grounding
-from ghostco.grounding import MAX_CHARS
+from dryrun import grounding
+from dryrun.grounding import MAX_CHARS
 
 
 def test_from_text_basic():

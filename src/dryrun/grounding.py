@@ -1,7 +1,7 @@
 """
 grounding.py — turn a PM's real data into context the stakeholders can cite.
 
-This is what separates GhostCo from "ask an LLM for balance": instead of
+This is what separates DryRun from "ask an LLM for balance": instead of
 guessing, the stakeholders reason over the PM's actual metrics, interview notes,
 or support exports — and are instructed to tag anything drawn from it as a
 GIVEN fact rather than an assumption.
